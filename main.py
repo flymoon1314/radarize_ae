@@ -45,6 +45,7 @@ if __name__ == "__main__":
     update_config(cfg, args)
 
     # Preprocess datasets. (bag -> npz)
+    # 将 .bag 格式的原始数据转换为 .npz 格式的数据集。
     bag_paths = sorted(glob.glob(os.path.join(cfg["DATASET"]["PATH"], "*.bag")))
     bag_paths = [x for x in bag_paths if not os.path.exists(x.replace(".bag", ".npz"))]
     run_commands(
@@ -55,6 +56,8 @@ if __name__ == "__main__":
         args.n_proc,
     )
 
+    # 根据配置文件 (cfg["DATASET"]["TRAIN_SPLIT"] 和 cfg["DATASET"]["TEST_SPLIT"])，
+    # 生成训练集和测试集 .npz 文件的路径
     train_npz_paths = sorted(
         [
             os.path.join(cfg["DATASET"]["PATH"], os.path.basename(x) + ".npz")
@@ -78,10 +81,12 @@ if __name__ == "__main__":
     )
 
     # Train flow models.
+    # 训练并测试 Flow 模型
     subprocess.run(["tools/train_flow.py", f"--cfg={args.cfg}"], check=True)
     subprocess.run(["tools/test_flow.py", f"--cfg={args.cfg}"], check=True)
 
     # Train rotnet models.
+    # 训练并测试 RotNet 模型
     subprocess.run(["tools/train_rot.py", f"--cfg={args.cfg}"], check=True)
     subprocess.run(["tools/test_rot.py", f"--cfg={args.cfg}"], check=True)
 
@@ -105,6 +110,7 @@ if __name__ == "__main__":
     )
 
     ### Run Cartographer.
+    ### Cartographer 是一种基于图的 SLAM（同步定位与地图构建）框架
     # Get ground truth.
     subprocess.run(
         [
@@ -158,6 +164,7 @@ if __name__ == "__main__":
     )
 
     # Our odometry + RadarHD baseline.
+    # 使用自有的里程计数据，结合 RadarHD 扫描
     subprocess.run(
         [
             "tools/run_carto.py",
@@ -171,6 +178,7 @@ if __name__ == "__main__":
     )
 
     # Run radarize.
+    # 运行带有 UNet 数据的 Cartographer SLAM，作为对比实验
     subprocess.run(
         [
             "tools/run_carto.py",

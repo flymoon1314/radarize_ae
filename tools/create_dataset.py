@@ -2,6 +2,7 @@
 
 """
 Converts .bag files to .npz dataset.
+bag到npz的数据转换工具代码
 """
 
 import os
