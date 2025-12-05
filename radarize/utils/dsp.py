@@ -298,6 +298,7 @@ def aoa_capon(x, steering_vector):
         for j in range(first_T.shape[1]):
             den[i] += steering_vector_conj[i, j] * first_T[i, j]
     # 计算 den 的倒数，即 den 数组每个元素的倒数，这一步是为了在下一步中构建权重
+    # 其同时也是copon功率谱
     den = np.reciprocal(den)
     # 通过矩阵乘法将 first 与 den 进行乘法，得到最终的权重 weights。
     # 这些权重是在 Capon Beamforming 算法下进行方向估计时需要用来加权不同接收信号的系数
@@ -335,8 +336,7 @@ def compute_range_azimuth(radar_cube, angle_res=1, angle_range=90, method="apes"
         steering_vec_ = steering_vec
         # 方向估计只支持Capon算法
         if method == "capon":
-            # 这里比较奇怪，接受的是Capon (MVDR) Beamforming 算法中的分母部分，代表了在不同角度上的信号增益响应
-            # 它反映了接收到的信号在不同角度上的噪声或信号的干扰程度
+            # 这里的第一个回参就是copon功率谱
             range_azimuth[r_idx, :], _ = aoa_capon(range_cube_[r_idx], steering_vec_)
         else:
             raise ValueError("Unknown method")
