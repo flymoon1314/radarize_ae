@@ -40,11 +40,12 @@ def create_radar_bev(
     heatmap_ts, heatmap_msgs = [], []
 
     # Get radar params
-    range_bias = radar_params["range_bias"]
-    range_max = radar_params["range_max"]
-    range_bins = radar_params["n_samples"]
+    range_bias = radar_params["range_bias"] # 范围偏置
+    range_max = radar_params["range_max"] # 雷达的最大范围
+    range_bins = radar_params["n_samples"] # 样本数量
 
-    radar_buffer = deque(maxlen=radar_buffer_len)
+    # 创建一个长度为 radar_buffer_len 的循环队列 radar_buffer，用于暂存雷达数据帧
+    radar_buffer = deque(maxlen=radar_buffer_len) 
 
     for i, (topic, msg, ts) in tqdm(
         enumerate(bag.read_messages([radar_topic])),
@@ -52,19 +53,26 @@ def create_radar_bev(
     ):
 
         # 1843/1843AOP
+        # 将雷达消息 msg 转换为一个立方体格式的数据
+        # 返回的是一个n_chirps // n_tx, n_rx * n_tx, n_samples的三维数组
         radar_cube = dsp.reshape_frame(msg)
 
         # Accumulate radar cubes in buffer.
+        # 将当前雷达数据帧添加到 radar_buffer 中，只有当缓冲区满时，才开始处理
         radar_buffer.append(radar_cube)
         if len(radar_buffer) < radar_buffer.maxlen:
             continue
         radar_cube = np.concatenate(radar_buffer, axis=0)
 
         # Choose antennas for range-azimuth heatmap.
+        # 从 radar_cube 中选择前 8 个天线的数据
         radar_cube_a = radar_cube[:, :8, :]
+        # 对数据进行天线TDM时域复用
         radar_cube_a = dsp._tdm(radar_cube_a, 2, 4)
 
         # All images should be C x H x W
+        # 计算雷达数据的范围-方位热图
+        # dsp.compute_range_azimuth负责使用capon完成方向估计，生成距离-方位热图
         heatmap = np.stack(
             [
                 dsp.compute_range_azimuth(
@@ -73,11 +81,14 @@ def create_radar_bev(
             ]
         )
 
+        # 如果需要坐标变换，则将热图从极坐标系转换为笛卡尔坐标系
         if warp_cartesian:
             # Warp heatmap to cartesian coordinates.
             heatmap = np.stack(
                 [
+                    # 旋转图像
                     np.rot90(
+                        # 实际坐标转换API调用
                         image_tools.polar2cartesian(
                             x,
                             np.linspace(range_bias, range_max, x.shape[0]),
@@ -97,7 +108,7 @@ def create_radar_bev(
                     for x in heatmap
                 ]
             )
-
+        # 热图进行归一化处理
         heatmap = dsp.normalize(
             heatmap, min_val=normalization_range[0], max_val=normalization_range[1]
         )
