@@ -71,7 +71,7 @@ def create_radar_bev(
         radar_cube_a = dsp._tdm(radar_cube_a, 2, 4)
 
         # All images should be C x H x W
-        # 计算雷达数据的范围-方位热图
+        # 计算雷达数据的距离-方位热图
         # dsp.compute_range_azimuth负责使用capon完成方向估计，生成距离-方位热图
         heatmap = np.stack(
             [

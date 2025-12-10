@@ -111,7 +111,7 @@ class ECAResNet18(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.linear = nn.Linear(512 * block.expansion, 32)
         self.fc = FcBlock(32, n_outputs)
-        # TODO 权重初始化可以看看
+        # 权重初始化
         weight_init(self)
 
     def _make_layer(self, block, planes, num_blocks, stride):
